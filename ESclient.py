@@ -12,16 +12,13 @@ class ESclient(object):
         self.port = port
 
     def get_elasticsearch_client(self):
-        """
-        :return: trả về 1 instance client kết nói đến server
-        """
         logging.info("get elasticsearch client")
         return Elasticsearch(
             [{'host': self.host, 'port': self.port}],
-            # sniff_on_start=True,
-            # sniff_on_connection_fail=True,
-            # sniffer_timeout=60,
-            # timeout=20
+            sniff_on_start=True,
+            sniff_on_connection_fail=True,
+            sniffer_timeout=60,
+            timeout=20
         )
 
 
@@ -35,18 +32,39 @@ class ESclient(object):
         for json in json_arr:
             yield json
 
-    def feed_data(self,body,index,doc_type):
+    def insert_data(self,json_arr,index,doc_type):
         es = self.get_elasticsearch_client()
-        helpers.bulk(es,index=index,doc_type=doc_type,actions=body,refresh = True)
+        helpers.bulk(es,index=index,doc_type=doc_type,actions=self.iter_data(json_arr),stats_only=True)
 
     def delete_index(self):
         pass
 
+    def scan_data(self,query):
+        logging.info("scan data from sever")
+        es = self.get_elasticsearch_client()
+        dict_product = {}
+        rs = helpers.scan(es, index="btl", doc_type="work", query=query, scroll="1m")
+        list_rs = []
+        for doc in rs:
+            print(doc)
+            data = doc["_source"]
+            list_rs.append(data)
+
+        for i in list_rs:
+            print(i)
+
+    def count_data(self):
+        logging.info("count amount of data")
+        es = self.get_elasticsearch_client()
+        rs = es.count(index="btl", doc_type="work", body=None)
+        logging.info("so dong : {}".format(rs["count"]))
 
 if __name__ == "__main__":
-    client = ESclient(setting.HOST,setting.HOST)
-    json1 = client.read_json("data/carerrbuilder.json")
-    client.feed_data(index="btl",doc_type="work",body=client.iter_data(json1))
+    client = ESclient(setting.HOST_ELASTICSEARCH,setting.PORT_ELASTICSEARCH)
+    client.count_data()
+    client.scan_data(None)
+    #json = client.read_json("data/carerrbuilder.json")
+    #client.feed_data(json_arr=json,index="btl",doc_type="work")
     # json1 = client.read_json("data/carerrbuilder.json")
     # json2 = client.read_json("data/mywork.json")
     # print(len(json1))
