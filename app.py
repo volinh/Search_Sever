@@ -2,6 +2,7 @@ from elasticsearch import Elasticsearch
 from flask import Flask
 from ESclient import ESclient
 import setting
+import json
 
 app = Flask(__name__)
 
@@ -14,14 +15,14 @@ def hello():
 @app.route("/search/<loc>/<param>")
 def search(loc,param):
     if loc == "content" :
-        search_content(param)
+        rs = search_content(param)
     elif loc == "title" :
-        search_title(param)
+        rs = search_title(param)
     elif loc == "url" :
-        search_url(param)
+        rs = search_url(param)
     elif loc == "total" :
-        search_total(param)
-
+        rs = search_total(param)
+    return rs
 
 def search_content(param):
     query = {
@@ -32,15 +33,31 @@ def search_content(param):
         }
     }
     rs = es.search_data(index="btl",doc_type="work",query=query)
-    return rs
+    return json.dumps(rs)
 
 
 def search_title(param):
-    pass
+    query = {
+        "query": {
+            "match": {
+                "title": param
+            }
+        }
+    }
+    rs = es.search_data(index="btl", doc_type="work", query=query)
+    return json.dumps(rs)
 
 
 def search_url(param):
-    pass
+    query = {
+        "query": {
+            "match": {
+                "url": param
+            }
+        }
+    }
+    rs = es.search_data(index="btl", doc_type="work", query=query)
+    return json.dumps(rs)
 
 
 def search_total(param):

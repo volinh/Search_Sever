@@ -74,8 +74,8 @@ class ESclient(object):
     def search_data(self,index,doc_type,query):
         logging.info("search")
         es = self.get_elasticsearch_client()
-        rs = es.search(index=index, doc_type=doc_type, body=query,size="1m")
-        return rs
+        rs = es.search(index=index, doc_type=doc_type, body=query,size=100)
+        return rs["hits"]["hits"]
 
 
     def map_data(self):
@@ -84,8 +84,16 @@ class ESclient(object):
 
 
 if __name__ == "__main__":
-    pass
-    # client = ESclient(setting.HOST_ELASTICSEARCH,setting.PORT_ELASTICSEARCH)
+    client = ESclient(setting.HOST_ELASTICSEARCH,setting.PORT_ELASTICSEARCH)
+    query = {
+        "query": {
+            "match": {
+                "content": "một ngày"
+            }
+        }
+    }
+    rs = client.search_data(index="btl",doc_type="work",query=query)
+    print(rs["hits"]["hits"])
     # client.count_data()
     # client.scan_data(None)
     #json = client.read_json("data/carerrbuilder.json")
